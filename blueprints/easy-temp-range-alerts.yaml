@@ -70,7 +70,7 @@ trigger:
 action:
   - variables:
       current_temp: "{{ trigger.state }}"
-      sensor_name: "{{ trigger.attributes.friendly_name }}"
+      sensor_name: "{{ state_attr(trigger.event.data.entity_id, 'friendly_name') }} " # trigger.attributes.friendly_name }}"
   - choose:
     - conditions:
         - "{{ current_temp | float < low_temp | float }}"
