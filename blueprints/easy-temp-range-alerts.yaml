@@ -57,7 +57,8 @@ condition:
         above: !input high_temp
 
 action:
-  - service: notify.mobile_app_{{ states(notify_device.state) }}
+  - service: notify.notify
+    target: !input 'notify_device'
     data:
       message: >-
         ⚠️ Temperature Alert!  Sensor {{ trigger.to_state.name }} is reporting
