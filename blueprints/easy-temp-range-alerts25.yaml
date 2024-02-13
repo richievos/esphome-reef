@@ -1,0 +1,109 @@
+#  Gemini
+# I want to create a Home Assistant blueprint that will notify my devices if a temperature sensor has its value go outside a configured low or high temperature range. Provide me the blueprint's yaml. Include inputs for the list of sensors, and the temperature range. I would like it to send the message to all the notification devices I select. Make sure to account for looping through all the notification devices
+# that code isn't looping through all the devices
+
+blueprint:
+  name: Temperature Range Alert
+  description: Send notifications when a temperature sensor goes outside a specified range.
+  domain: automation
+
+  input:
+    temp_sensor:
+      name: Temperature Sensors
+      description: Select the temperature sensors to monitor.
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+    low_temp:
+      name: Low Temperature Threshold
+      description: Temperature below which a notification will be sent.
+      default: 65
+      selector:
+        number:
+          min: -50
+          max: 150
+          unit_of_measurement: "°F"  # Or "°C" if you prefer Celsius
+    high_temp:
+      name: High Temperature Threshold
+      description: Temperature above which a notification will be sent.
+      default: 80
+      selector:
+        number:
+          min: -50
+          max: 150
+          unit_of_measurement: "°F"  # Or "°C" if you prefer Celsius
+    notify_devices:
+      name: Notification Devices
+      description: Devices to be notified.
+      selector:
+        device:
+          integration: mobile_app
+          multiple: true
+      # multiple: true
+    # notification_mode:
+    #   name: Notification Mode
+    #   description: Choose sequential or parallel notifications.
+    #   selector:
+    #     select:
+    #       options:
+    #         - sequential
+    #         - parallel
+
+# trigger:
+#   - platform: state
+#     entity_id: !input temp_sensor
+#     for:
+#       minutes: 1  # Adjust to check frequency you prefer
+#
+
+trigger:
+  - platform: numeric_state
+    id: "t0"
+    entity_id: !input temp_sensor
+    above: !input high_temp
+  - platform: numeric_state
+    id: "t1"
+    entity_id: !input temp_sensor
+    below: !input low_temp
+
+action:
+  - variables:
+      current_temp: "{{ trigger.state }}"
+      sensor_name: "{{ state_attr(trigger.event.data.entity_id, 'friendly_name') }} " # trigger.attributes.friendly_name }}"
+  - choose:
+    - conditions:
+        - "{{ current_temp | float < low_temp | float }}"
+      sequence:
+        - repeat:
+            for_each: !input notify_devices
+            sequence:
+              - service: notify.notify
+                data:
+                  message: "⚠️ Temperature Alert: {{ sensor_name }} is too low at {{ current_temp }}°!"
+                target:
+                  entity_id: "{{ repeat.item }}"
+    # - conditions:
+    #     - "{{ current_temp | float > high_temp | float }}"
+    #   sequence:
+    #     - service: notify.notify
+    #       data:
+    #         message: "⚠️ Temperature Alert: {{ sensor_name }} is too high at {{ current_temp }}°!"
+    #       target: !input notify_devices
+    #       for: "{{ expand('!input
+
+# action:
+#   - variables:
+#       sensor_name: "{{ trigger.attributes.friendly_name }}"
+#       sensor_temp: "{{ trigger.state }}"
+#   - service: notify.mobile_app  # Ensure this matches your device notification service
+#     data:
+#       message: >-
+#         ⚠️ Temperature Alert! {{ sensor_name }} is reporting a temperature of
+#         {{ sensor_temp }} which is outside the configured range.
+#     target:
+#       device_id: "{{ device }}"
+#     for: "{{ expand('!input notification_devices') | map(attribute='device_id') }}"
+#
+
+mode: single
