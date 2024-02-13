@@ -62,10 +62,6 @@ action:
     - conditions:
         - "{{ current_temp | float < low_temp | float }}"
       sequence:
-        - condition: template
-          value_template: >
-            {{ not is_state('input_boolean.temp_range_override', 'on') }}
-            # Add an optional override input_boolean if needed
         - service: notify.notify
           data:
             message: "⚠️ Temperature Alert: {{ sensor_name }} is too low at {{ current_temp }}°!"
@@ -73,10 +69,6 @@ action:
     - conditions:
         - "{{ current_temp | float > high_temp | float }}"
       sequence:
-        - condition: template
-          value_template: >
-            {{ not is_state('input_boolean.temp_range_override', 'on') }}
-            # Add an optional override input_boolean if needed
         - service: notify.notify
           data:
             message: "⚠️ Temperature Alert: {{ sensor_name }} is too high at {{ current_temp }}°!"
