@@ -37,13 +37,9 @@ blueprint:
       name: Notification Devices
       description: Devices to be notified.
       selector:
-        # device:
-        #   integration: mobile_app
-        #   multiple: true
-        entity:
+        device:
           integration: mobile_app
           multiple: true
-
       # multiple: true
     # notification_mode:
     #   name: Notification Mode
