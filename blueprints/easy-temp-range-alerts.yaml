@@ -32,12 +32,19 @@ blueprint:
           max: 120
           unit_of_measurement: "°C"
           mode: box
-    notification_targets:
+    notify_targets:
       name: Notification Targets
-      description: Select devices for notifications and enter email addresses (comma-separated).
-      default: [] # Optional default
+      description: Devices or services to send the notification to.
       selector:
-        target: {}
+        target:
+          entity:
+            domain: notify
+    # notification_targets:
+    #   name: Notification Targets
+    #   description: Select devices for notifications and enter email addresses (comma-separated).
+    #   default: [] # Optional default
+    #   selector:
+    #     target: {}
 
 trigger:
   - platform: state
