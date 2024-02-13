@@ -1,0 +1,77 @@
+#  Gemini
+# I want to create a Home Assistant blueprint that will notify my devices if a temperature sensor has its value go outside a configured low or high temperature range. Provide me the blueprint's yaml. Include inputs for the list of sensors, and the temperature range
+
+blueprint:
+  name: Temperature Range Alert
+  description: Send notifications when a temperature sensor goes outside a specified range.
+  domain: automation
+
+  input:
+    temp_sensors:
+      name: Temperature Sensors
+      description: Select the temperature sensors to monitor.
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+    low_temp:
+      name: Low Temperature Threshold
+      description: Temperature below which a notification will be sent.
+      default: 65
+      selector:
+        number:
+          min: -50
+          max: 150
+          unit_of_measurement: "°F"  # Or "°C" if you prefer Celsius
+    high_temp:
+      name: High Temperature Threshold
+      description: Temperature above which a notification will be sent.
+      default: 80
+      selector:
+        number:
+          min: -50
+          max: 150
+          unit_of_measurement: "°F"  # Or "°C" if you prefer Celsius
+    notify_devices:
+      name: Notification Devices
+      description: Devices to be notified.
+      selector:
+        device:
+          integration: mobile_app
+      # multiple: true
+    # notification_mode:
+    #   name: Notification Mode
+    #   description: Choose sequential or parallel notifications.
+    #   selector:
+    #     select:
+    #       options:
+    #         - sequential
+    #         - parallel
+
+trigger:
+  - platform: state
+    entity_id: !input temp_sensors
+    for:
+      minutes: 1  # Adjust to check frequency you prefer
+
+action:
+  - variables:
+      current_temp: "{{ trigger.to_state.state }}"
+      sensor_name: "{{ trigger.to_state.attributes.friendly_name }}"
+  - choose:
+    - conditions:
+        - "{{ current_temp | float < low_temp | float }}"
+      sequence:
+        - service: notify.notify
+          data:
+            message: "⚠️ Temperature Alert: {{ sensor_name }} is too low at {{ current_temp }}°!"
+          target: !input notify_devices
+    - conditions:
+        - "{{ current_temp | float > high_temp | float }}"
+      sequence:
+        - service: notify.notify
+          data:
+            message: "⚠️ Temperature Alert: {{ sensor_name }} is too high at {{ current_temp }}°!"
+          target: !input notify_devices
+
+mode: single
