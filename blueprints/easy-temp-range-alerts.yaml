@@ -1,0 +1,65 @@
+#  Gemini
+# I want to create a Home Assistant blueprint that will notify my devices if a temperature sensor has its value go outside a configured low or high temperature range. Provide me the blueprint's yaml. Include inputs for the list of sensors, and the temperature range
+
+blueprint:
+  name: Temperature Range Alert
+  description: Trigger notifications when a temperature sensor goes outside a specified range.
+  domain: automation
+
+  input:
+    temp_sensors:
+      name: Temperature Sensors
+      description: Select the temperature sensors to monitor.
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+      # multiple: true
+    low_temp:
+      name: Low Temperature Threshold
+      description:  Trigger notification if the temperature falls below this value.
+      selector:
+        number:
+          min: -50  # Adjust minimum, maximum as needed
+          max: 120
+          unit_of_measurement: "°C"  # Or '°F' if you prefer
+          mode: box
+    high_temp:
+      name: High Temperature Threshold
+      description: Trigger notification if the temperature exceeds this value.
+      selector:
+        number:
+          min: -50
+          max: 120
+          unit_of_measurement: "°C"
+          mode: box
+    notify_device:
+      name: Device to Notify
+      description: The device to receive the notification.
+      selector:
+        device:
+          integration: mobile_app
+
+trigger:
+  - platform: state
+    entity_id: !input temp_sensors
+    for:  # Optional delay to prevent excessive notifications
+      minutes: 5
+
+condition:
+  - condition: or
+    conditions:
+      - condition: numeric_state
+        entity_id: !input temp_sensors
+        below: !input low_temp
+      - condition: numeric_state
+        entity_id: !input temp_sensors
+        above: !input high_temp
+
+action:
+  - service: notify.mobile_app_{{ states(notify_device.state) }}
+    data:
+      message: >-
+        ⚠️ Temperature Alert!  Sensor {{ trigger.to_state.name }} is reporting
+        {{ trigger.to_state.state }}°C, outside the range of
+        {{ input_number.low_temp.state }}°C - {{ input_number.high_temp.state }}°C.
